@@ -25,16 +25,7 @@ public class GestorPedidos {
             subtotal += preciosProductos.get(i) * cantidades.get(i);
         }
 
-        double descuento = 0;
-        if (tipoCliente.equals("VIP")) {
-            descuento = subtotal * 0.20;
-        } else if (tipoCliente.equals("FRECUENTE")) {
-            descuento = subtotal * 0.10;
-        } else if (tipoCliente.equals("REGULAR")) {
-            descuento = subtotal * 0.05;
-        } else if (tipoCliente.equals("NUEVO")) {
-            descuento = 0;
-        }
+        double descuento = CalculadoraDescuentos.obtenerDescuento(tipoCliente, subtotal);
 
         double impuesto = (subtotal - descuento) * 0.12;
         double total = subtotal - descuento + impuesto;
