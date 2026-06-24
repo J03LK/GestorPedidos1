@@ -20,14 +20,7 @@ public class GestorPedidos {
                                List<Integer> cantidades,
                                String tipoCliente) {
 
-        if (nombreCliente == null || nombreCliente.trim().isEmpty()) {
-            System.out.println("Error: nombre de cliente invalido");
-            return;
-        }
-        if (emailCliente == null || !emailCliente.contains("@")) {
-            System.out.println("Error: email invalido");
-            return;
-        }
+        if (!ValidadorCliente.esValido(nombreCliente, emailCliente)) return;
 
         double subtotal = 0;
         for (int i = 0; i < nombresProductos.size(); i++) {
@@ -83,14 +76,7 @@ public class GestorPedidos {
     }
 
     public void cancelarPedido(String nombreCliente, String emailCliente, int idPedido) {
-        if (nombreCliente == null || nombreCliente.trim().isEmpty()) {
-            System.out.println("Error: nombre de cliente invalido");
-            return;
-        }
-        if (emailCliente == null || !emailCliente.contains("@")) {
-            System.out.println("Error: email invalido");
-            return;
-        }
+        if (!ValidadorCliente.esValido(nombreCliente, emailCliente)) return;
 
         try {
             Statement stmt = conexionBD.createStatement();
