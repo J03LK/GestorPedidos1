@@ -1,17 +1,15 @@
-import java.util.*;
-import java.io.*;
-import java.sql.*;
+import java.util.List;
 
 public class GestorPedidos {
-    private Connection conexionBD;
 
-    public GestorPedidos() {
-        try {
-            this.conexionBD = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/tienda", "root", "admin123");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    private RepositorioPedidos repositorio;
+    private GeneradorFactura generadorFactura;
+    private ServicioEmail servicioEmail;
+
+    public GestorPedidos(RepositorioPedidos repositorio, GeneradorFactura generadorFactura, ServicioEmail servicioEmail) {
+        this.repositorio = repositorio;
+        this.generadorFactura = generadorFactura;
+        this.servicioEmail = servicioEmail;
     }
 
     public void procesarPedido(String nombreCliente, String emailCliente,
@@ -41,54 +39,16 @@ public class GestorPedidos {
         double impuesto = (subtotal - descuento) * 0.12;
         double total = subtotal - descuento + impuesto;
 
-        try {
-            Statement stmt = conexionBD.createStatement();
-            String sql = "INSERT INTO pedidos (cliente, total) VALUES ('"
-                    + nombreCliente + "'," + total + ")";
-            stmt.executeUpdate(sql);
-        } catch (SQLException e) {
-            System.out.println("Error al guardar el pedido: " + e.getMessage());
-        }
-
-        try {
-            FileWriter writer = new FileWriter("factura_" + nombreCliente + ".txt");
-            writer.write("FACTURA\n");
-            writer.write("Cliente: " + nombreCliente + "\n");
-            for (int i = 0; i < nombresProductos.size(); i++) {
-                writer.write(nombresProductos.get(i) + "x" + cantidades.get(i)
-                        + " $" + (preciosProductos.get(i) * cantidades.get(i)) + "\n");
-            }
-            writer.write("Subtotal: $" + subtotal + "\n");
-            writer.write("Descuento: $" + descuento + "\n");
-            writer.write("Impuesto: $" + impuesto + "\n");
-            writer.write("TOTAL: $" + total + "\n");
-            writer.close();
-        } catch (IOException e) {
-            System.out.println("Error al generar la factura: " + e.getMessage());
-        }
-
-        System.out.println("Enviando correo a " + emailCliente + "...");
-        System.out.println("Asunto: Confirmacion de pedido");
-        System.out.println("Cuerpo: Estimado " + nombreCliente + ", su pedido por $"
-                + total + " ha sido procesado.");
-        System.out.println("[LOG] Pedido procesado para " + nombreCliente
-                + " Total: " + total);
+        repositorio.guardarPedido(nombreCliente, total);
+        generadorFactura.generar(nombreCliente, nombresProductos, preciosProductos, cantidades, subtotal, descuento, impuesto, total);
+        servicioEmail.enviarConfirmacion(emailCliente, nombreCliente, total);
     }
 
     public void cancelarPedido(String nombreCliente, String emailCliente, int idPedido) {
+
         if (!ValidadorCliente.esValido(nombreCliente, emailCliente)) return;
 
-        try {
-            Statement stmt = conexionBD.createStatement();
-            String sql = "DELETE FROM pedidos WHERE id=" + idPedido;
-            stmt.executeUpdate(sql);
-        } catch (SQLException e) {
-            System.out.println("Error al cancelar el pedido: " + e.getMessage());
-        }
-
-        System.out.println("Enviando correo a " + emailCliente + "...");
-        System.out.println("Asunto: Cancelacion de pedido");
-        System.out.println("Cuerpo: Estimado " + nombreCliente + ", su pedido #"
-                + idPedido + " ha sido cancelado.");
+        repositorio.eliminarPedido(idPedido);
+        servicioEmail.enviarCancelacion(emailCliente, nombreCliente, idPedido);
     }
 }
